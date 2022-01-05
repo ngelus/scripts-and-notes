@@ -19,6 +19,7 @@ Function Set-WallPaper {
     [CmdletBinding()]
     param (
         [parameter(Mandatory=$True,Position=0)]
+	[Alias("Picture","File")]
         # Provide path to image
         [string]$Image,
         # Provide wallpaper style that you would like applied
@@ -96,6 +97,7 @@ function Set-WallpaperFromURL {
     [CmdletBinding()]
     param (
         [parameter(Mandatory=$true,Position=0)]
+	[Alias("PictureURL","FileURL")]
         [string]$imageURL,
         [parameter(Mandatory=$False,Position=1)]
         [ValidateSet('Fill', 'Fit', 'Stretch', 'Tile', 'Center', 'Span')]
