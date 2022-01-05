@@ -18,11 +18,11 @@ Function Set-WallPaper {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory=$True)]
+        [parameter(Mandatory=$True,Position=0)]
         # Provide path to image
         [string]$Image,
         # Provide wallpaper style that you would like applied
-        [parameter(Mandatory=$False)]
+        [parameter(Mandatory=$False,Position=1)]
         [ValidateSet('Fill', 'Fit', 'Stretch', 'Tile', 'Center', 'Span')]
         [string]$Style
     )
@@ -95,9 +95,9 @@ function Set-WallpaperFromURL {
 	
     [CmdletBinding()]
     param (
-        [parameter(Mandatory=$true)]
+        [parameter(Mandatory=$true,Position=0)]
         [string]$imageURL,
-        [parameter(Mandatory=$False)]
+        [parameter(Mandatory=$False,Position=1)]
         [ValidateSet('Fill', 'Fit', 'Stretch', 'Tile', 'Center', 'Span')]
         [string]$Style
     )
