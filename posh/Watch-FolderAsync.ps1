@@ -26,20 +26,25 @@ function Watch-Changes {
         [ValidateScript({Test-Path $_})]
         [string]$Path = [Environment]::CurrentDirectory,
         [Parameter(Mandatory=$false,Position=1)]
-        [string]$FileFilter = '*',
-        [Parameter(Mandatory=$false,Position=2)]
-        [switch]$IncludeSubfolders = $false,
-        [Parameter(Mandatory=$false,Position=3)]
-        [scriptblock]$ScriptBlock = {
+        [scriptblock]$Created = {
             $text = "{0} was {1} at {2}." -f $args.FullPath, $args.ChangeType, $event.TimeGenerated
             $args | Out-String | Write-Host
             $event | Out-String | Write-Host
             Write-Host $text -ForegroundColor DarkYellow
-        }
+        },
+        [Parameter(Mandatory=$false,Position=2)]
+        [scriptblock]$Changed = {},
+        [Parameter(Mandatory=$false,Position=3)]
+        [scriptblock]$Renamed = {},
+        [Parameter(Mandatory=$false,Position=4)]
+        [scriptblock]$Deleted = {},
+        [Parameter(Mandatory=$false,Position=5)]
+        [string]$FileFilter = '*',
+        [Parameter(Mandatory=$false,Position=6)]
+        [switch]$IncludeSubfolders = $false
     )
 
     [IO.NotifyFilters]$AttributeFilter = [IO.NotifyFilters]::FileName, [IO.NotifyFilters]::LastWrite
-    [int]$Timeout = 1000
 
     try {
         $watcher = New-Object -TypeName System.IO.FileSystemWatcher -Property @{
@@ -50,10 +55,10 @@ function Watch-Changes {
         }
 
         $handlers = . {
-            Register-ObjectEvent -InputObject $watcher -EventName Changed -Action $ScriptBlock
-            Register-ObjectEvent -InputObject $watcher -EventName Created -Action $ScriptBlock
-            Register-ObjectEvent -InputObject $watcher -EventName Deleted -Action $ScriptBlock
-            Register-ObjectEvent -InputObject $watcher -EventName Renamed -Action $ScriptBlock
+            Register-ObjectEvent -InputObject $watcher -EventName Changed -Action $Changed
+            Register-ObjectEvent -InputObject $watcher -EventName Created -Action $Created
+            Register-ObjectEvent -InputObject $watcher -EventName Deleted -Action $Deleted
+            Register-ObjectEvent -InputObject $watcher -EventName Renamed -Action $Renamed
         }
 
         $watcher.EnableRaisingEvents = $true
