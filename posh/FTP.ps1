@@ -30,9 +30,9 @@ function Get-FTPFileList {
         [Parameter(Mandatory=$true, Position=2)]
         [ValidateNotNullOrEmpty()]
         [string]$Password,
-        [Parameter(Mandatory=$true, Position=3)]
+        [Parameter(Mandatory=$false, Position=3)]
         [ValidateNotNullOrEmpty()]
-        [string]$Directory
+        [string]$Directory = ""
     )
 
     try {
@@ -288,12 +288,12 @@ function Get-FTPDirectory {
         [Parameter(Mandatory=$true, Position=2)]
         [ValidateNotNullOrEmpty()]
         [string]$Password,
-        [Parameter(Mandatory=$true, Position=3)]
+        [Parameter(Mandatory=$false, Position=3)]
         [ValidateNotNullOrEmpty()]
-        [string]$From,
-        [Parameter(Mandatory=$true, Position=4)]
+        [string]$From = "",
+        [Parameter(Mandatory=$false, Position=4)]
         [ValidateNotNullOrEmpty()]
-        [string]$To
+        [string]$To = [System.Environment]::GetCurrentDirectory()
     )
 
     try {
@@ -319,6 +319,102 @@ function Get-FTPDirectory {
            }
        }
 
+    } catch {
+        Write-Error -Message $_.Exception.InnerException.Message
+    }
+}
+
+function Watch-FTPChanges {
+    <#
+        .SYNOPSIS
+        Watches for changes on an FTP server.
+
+        .DESCRIPTION
+        Watches for changes on an FTP server.
+
+        .PARAMETER Server
+        The FTP server to connect to.
+
+        .PARAMETER Username
+        The username to use when connecting to the FTP server.
+
+        .PARAMETER Password
+        The password to use when connecting to the FTP server.
+
+        .PARAMETER Directory
+        The directory to watch.
+
+        .PARAMETER Interval
+        The interval to check for changes.
+    #>
+
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory=$true, Position=0)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Server,
+        [Parameter(Mandatory=$true, Position=1)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Username,
+        [Parameter(Mandatory=$true, Position=2)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Password,
+        [Parameter(Mandatory=$false, Position=3)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Directory = "",
+        [Parameter(Mandatory=$false, Position=4)]
+        [ValidateNotNullOrEmpty()]
+        [int]$Interval = 10,
+        [Parameter(Mandatory=$false, Position=5)]
+        [ValidateNotNullOrEmpty()]
+        [scriptblock]$Added = {
+            Write-Verbose "Added Files:"
+            Write-Verbose ($args -Join "`n")
+        },
+        [Parameter(Mandatory=$false, Position=6)]
+        [ValidateNotNullOrEmpty()]
+        [scriptblock]$Removed = {
+            Write-Verbose "Removed Files:"
+            Write-Verbose ($args -Join "`n")
+        }
+    )
+
+    try {
+        $previousFiles = $null
+        do {
+            $files = Get-FTPFileList $Server $Username $Password $Directory
+            $fileNames = New-Object System.Collections.ArrayList
+            foreach($line in $files) {
+                $tokens = $line.Split(" ", 9, [StringSplitOptions]::RemoveEmptyEntries)
+                $fileNames.Add($tokens[8])
+            }
+    
+            if($previousFiles -eq $null) {
+                Write-Verbose "Found $(($files.Count)) files"
+            }
+            else {
+                $changes = Compare-Object -DifferenceObject $fileNames -ReferenceObject $previousFiles
+    
+                $cadded = $changes | Where-Object { $_.SideIndicator -eq "=>"} | Select-Object -ExpandProperty InputObject
+                if($cadded) {
+                    $Added.Invoke($cadded)
+                }
+    
+                $cremoved = $changes | Where-Object { $_.SideIndicator -eq "<="} | Select-Object -ExpandProperty InputObject
+                if($cremoved) {
+                    $Removed.Invoke($cremoved)
+                }
+    
+                
+            }
+    
+            $previousFiles = $fileNames
+    
+            Write-Verbose "Sleeping for $Interval seconds"
+            Start-Sleep -Seconds $Interval
+    
+        } while ($true)
+    
     } catch {
         Write-Error -Message $_.Exception.InnerException.Message
     }
