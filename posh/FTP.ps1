@@ -196,6 +196,8 @@ function Get-FTPFile {
     $TargetStream.Dispose()
     $FTPResponse.Close()
     $FTPResponse.Dispose()
+
+    return $To
 }
 
 function Remove-FTPFile {
@@ -293,7 +295,7 @@ function Get-FTPDirectory {
         [string]$From = "",
         [Parameter(Mandatory=$false, Position=4)]
         [ValidateNotNullOrEmpty()]
-        [string]$To = [System.Environment]::GetCurrentDirectory()
+        [string]$To = $pwd
     )
 
     try {
@@ -322,6 +324,8 @@ function Get-FTPDirectory {
     } catch {
         Write-Error -Message $_.Exception.InnerException.Message
     }
+
+    return $To
 }
 
 function Watch-FTPChanges {
@@ -346,6 +350,12 @@ function Watch-FTPChanges {
 
         .PARAMETER Interval
         The interval to check for changes.
+
+        .PARAMETER Added
+        ScriptBlock to execute when a file is added.
+
+        .PARAMETER Removed
+        ScriptBlock to execute when a file is removed.
     #>
 
     [CmdletBinding()]
