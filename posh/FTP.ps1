@@ -124,8 +124,6 @@ function Set-FTPFile {
     }
     $RequestStream.Close()
     $RequestStream.Dispose()
-    $FTPRequest.Close()
-    $FTPRequest.Dispose()
 }
 
 function Get-FTPFile {
